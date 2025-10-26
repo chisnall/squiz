@@ -1,0 +1,37 @@
+{
+    "name": "chisnall/squiz",
+    "description": "Squiz debugger for Laravel",
+    "keywords": [
+        "laravel",
+        "debug",
+        "dev"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lee Chisnall",
+            "email": "lee.chiz.uk@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "symfony/var-dumper": "^7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chisnall\\Squiz\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Chisnall\\Squiz\\ServiceProvider"
+            ]
+        }
+    }
+}
