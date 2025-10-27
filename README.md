@@ -85,6 +85,7 @@ Put these in your .env file to customise settings.
 SQUIZ_TOKEN=
 SQUIZ_POLLING_INTERVAL=1000
 SQUIZ_ROUTE_PATH=/squiz
+SQUIZ_TITLE="Squiz"
 SQUIZ_HEADING="Squiz"
  ````
 
@@ -95,6 +96,8 @@ The above values are the defaults if they are not specified in the .env file.
 `SQUIZ_POLLING_INTERVAL` the polling interval in ms.
 
 `SQUIZ_ROUTE_PATH` the route path for the debugging page and API routes.
+
+`SQUIZ_TITLE` title for the debugging page.
 
 `SQUIZ_HEADING` heading text for the debugging page.
 
