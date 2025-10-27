@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Live Debug</title>
+    <title>{{ config('squiz.title') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
@@ -12,218 +12,215 @@
 </head>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Add new entries to the DOM
-    async function addEntries(data) {
-        const noEntries = entriesContainer.textContent.includes('No entries');
+    document.addEventListener('DOMContentLoaded', () => {
+        // Add new entries to the DOM
+        async function addEntries(data) {
+            const noEntries = entriesContainer.textContent.includes('No entries');
 
-        let html = '';
+            let html = '';
 
-        // Check for no entries
-        if (noEntries) {
-            entriesContainer.innerHTML = '';
-        } else {
-            html += `<hr>`;
+            // Check for no entries
+            if (noEntries) {
+                entriesContainer.innerHTML = '';
+            } else {
+                html += `<hr>`;
+            }
+
+            if (data.length) {
+                data.forEach((entry, index) => {
+                    const isLast = index === data.length - 1;
+
+                    if (entry.terminated) {
+                        html += `<div class="terminated"><pre class="datetime terminated">${entry.datetime}</pre><pre class="terminated">terminated</pre></div>`;
+                    } else {
+                        html += `<pre class="datetime">${entry.datetime}</pre>`;
+                    }
+
+                    html += `<pre>${entry.file}</pre>`;
+                    html += `<pre>${entry.line}</pre>`;
+                    if (entry.comment) html += `<pre class="italic">${entry.comment}</pre>`;
+                    html += atob(entry.entry);
+                    if (!isLast) html += `<hr>`;
+                });
+            }
+
+            showNotice();
+
+            entriesContainer.insertAdjacentHTML('beforeend', html);
+
+            runScriptsFrom(entriesContainer);
         }
 
-        if (data.length) {
-            data.forEach((entry, index) => {
-                const isLast = index === data.length - 1;
+        // Function to apply theme
+        function applyTheme(theme) {
+            // Check for system theme
+            if (theme === "system") {
+                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (prefersDark) theme = 'dark';
+                else theme = 'light';
+            }
 
-                if (entry.terminated) {
-                    html += `<div class="terminated"><pre class="datetime terminated">${entry.datetime}</pre><pre class="terminated">terminated</pre></div>`;
-                } else {
-                    html += `<pre class="datetime">${entry.datetime}</pre>`;
-                }
+            if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+            else if (theme === "light") document.documentElement.setAttribute("data-theme", "light");
+        }
 
-                html += `<pre>${entry.file}</pre>`;
-                html += `<pre>${entry.line}</pre>`;
-                if (entry.comment) html += `<pre class="italic">${entry.comment}</pre>`;
-                html += atob(entry.entry);
-                if (!isLast) html += `<hr>`;
+        // Run scripts in VarDumper output
+        function runScriptsFrom(element) {
+            element.querySelectorAll('script').forEach(script => {
+                const s = document.createElement('script');
+                if (script.src) s.src = script.src;
+                else s.textContent = script.textContent;
+                document.body.appendChild(s);
+                script.remove();
             });
         }
 
-        showNotice();
+        // Show notice to the side of the theme buttons
+        function showNotice() {
+            const notifyElements = [notify1, notify2];
 
-        entriesContainer.insertAdjacentHTML('beforeend', html);
+            notifyElements.forEach(el => {
+                // Make visible
+                el.classList.add('on');
+                el.style.opacity = '1';
+                el.style.transition = 'opacity 1.0s ease';
 
-        runScriptsFrom(entriesContainer);
-    }
-
-    // Function to apply theme
-    function applyTheme(theme) {
-        // Check for system theme
-        if (theme === "system") {
-            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            if (prefersDark) theme = 'dark';
-            else theme = 'light';
-        }
-
-        if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
-        else if (theme === "light") document.documentElement.setAttribute("data-theme", "light");
-    }
-
-    // Run scripts in VarDumper output
-    function runScriptsFrom(element) {
-        element.querySelectorAll('script').forEach(script => {
-            const s = document.createElement('script');
-            if (script.src) s.src = script.src;
-            else s.textContent = script.textContent;
-            document.body.appendChild(s);
-            script.remove();
-        });
-    }
-
-    // Show notice to the side of the theme buttons
-    function showNotice() {
-        const notifyElements = [notify1, notify2];
-
-        notifyElements.forEach(el => {
-            // Make visible
-            el.classList.add('on');
-            el.style.opacity = '1';
-            el.style.transition = 'opacity 1.0s ease';
-
-            // Fade out after 2 seconds
-            setTimeout(() => {
-                el.style.opacity = '0';
-
-                // Remove class after fade completes
+                // Fade out after 2 seconds
                 setTimeout(() => {
-                    el.classList.remove('on');
-                }, 1000); // matches transition duration
-            }, 2000);
+                    el.style.opacity = '0';
+
+                    // Remove class after fade completes
+                    setTimeout(() => {
+                        el.classList.remove('on');
+                    }, 1000); // matches transition duration
+                }, 2000);
+            });
+        }
+
+        // Function to style auto button
+        function styleAutoButton(state) {
+            if (state === 'running') {
+                autoBtn.classList.add("running");
+            } else {
+                autoBtn.classList.remove("running");
+            }
+        }
+
+        // Function to style theme buttons
+        function styleThemeButtons(button) {
+            systemThemeButton.classList.remove("selected");
+            lightThemeButton.classList.remove("selected");
+            darkThemeButton.classList.remove("selected");
+            document.getElementById(`icon-${button}`).classList.add("selected");
+        }
+
+        const squizToken = document.getElementById('squizToken').value;
+        const squizPollingInterval = (+document.getElementById('squizPollingInterval').value) || 1000;
+        const squizRoutePath = document.getElementById('squizRoutePath').value;
+
+        const entriesContainer = document.getElementById("entries-container");
+        const notify1 = document.getElementById("notify-1");
+        const notify2 = document.getElementById("notify-2");
+        const systemThemeButton = document.getElementById("icon-system");
+        const lightThemeButton = document.getElementById("icon-light");
+        const darkThemeButton = document.getElementById("icon-dark");
+
+        const autoBtn = document.getElementById("auto-button");
+        const clearBtn = document.getElementById("clear-button");
+
+        let currentState = localStorage.getItem("currentState") ?? 'running';
+        let currentTheme = localStorage.getItem("currentTheme") ?? 'system';
+
+        let previousLogIdsValue = document.getElementById('logIds').value === '' ? null : document.getElementById('logIds').value;
+        let previousLogIds = previousLogIdsValue === null ? [] : previousLogIdsValue.split(",").map(Number);
+
+        systemThemeButton.addEventListener("click", () => {
+            localStorage.setItem("currentTheme", "system");
+            styleThemeButtons('system');
+            applyTheme('system');
         });
-    }
 
-    // Function to style auto button
-    function styleAutoButton(state) {
-        if (state === 'running') {
-            autoBtn.classList.add("running");
-        } else {
-            autoBtn.classList.remove("running");
-        }
-    }
+        lightThemeButton.addEventListener("click", () => {
+            localStorage.setItem("currentTheme", "light");
+            styleThemeButtons('light');
+            applyTheme('light');
+        });
 
-    // Function to style theme buttons
-    function styleThemeButtons(button) {
-        systemThemeButton.classList.remove("selected");
-        lightThemeButton.classList.remove("selected");
-        darkThemeButton.classList.remove("selected");
-        document.getElementById(`icon-${button}`).classList.add("selected");
-    }
+        darkThemeButton.addEventListener("click", () => {
+            localStorage.setItem("currentTheme", "dark");
+            styleThemeButtons('dark');
+            applyTheme('dark');
+        });
 
-    const debugToken = document.getElementById('debugToken').value;
-    const debugPollingInterval = +document.getElementById('debugPollingInterval').value;
-    const debugRoutePath = document.getElementById('debugRoutePath').value;
-    const csrfToken = document.getElementsByName('_token')[0].value;
+        autoBtn.addEventListener("click", () => {
+            currentState = currentState === 'running' ? 'paused' : 'running';
+            localStorage.setItem("currentState", currentState);
+            styleAutoButton(currentState);
+        });
 
-    const entriesContainer = document.getElementById("entries-container");
-    const notify1 = document.getElementById("notify-1");
-    const notify2 = document.getElementById("notify-2");
-    const systemThemeButton = document.getElementById("icon-system");
-    const lightThemeButton = document.getElementById("icon-light");
-    const darkThemeButton = document.getElementById("icon-dark");
-
-    const autoBtn = document.getElementById("auto-button");
-    const clearBtn = document.getElementById("clear-button");
-
-    let currentState = localStorage.getItem("currentState") ?? 'running';
-    let currentTheme = localStorage.getItem("currentTheme") ?? 'system';
-
-    let previousLogIdsValue = document.getElementById('logIds').value === '' ? null : document.getElementById('logIds').value;
-    let previousLogIds = previousLogIdsValue === null ? [] : previousLogIdsValue.split(",").map(Number);
-
-    systemThemeButton.addEventListener("click", () => {
-        localStorage.setItem("currentTheme", "system");
-        styleThemeButtons('system');
-        applyTheme('system');
-    });
-
-    lightThemeButton.addEventListener("click", () => {
-        localStorage.setItem("currentTheme", "light");
-        styleThemeButtons('light');
-        applyTheme('light');
-    });
-
-    darkThemeButton.addEventListener("click", () => {
-        localStorage.setItem("currentTheme", "dark");
-        styleThemeButtons('dark');
-        applyTheme('dark');
-    });
-
-    autoBtn.addEventListener("click", () => {
-        currentState = currentState === 'running' ? 'paused' : 'running';
-        localStorage.setItem("currentState", currentState);
-        styleAutoButton(currentState);
-    });
-
-    clearBtn.addEventListener("click", async () => {
-        try {
-            let response = await fetch(debugRoutePath + '/clear', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-DEBUG-TOKEN': debugToken,
-                    'X-CSRF-TOKEN': csrfToken
-                },
-            });
-
-            entriesContainer.innerHTML = '<pre>No entries.</pre>';
-        } catch (error) {
-            console.error("Request failed:", error);
-        }
-    });
-
-    setInterval(async () => {
-        if (currentState === 'paused') {
-            return;
-        }
-
-        try {
-            let response = await fetch(debugRoutePath + '/ids', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-DEBUG-TOKEN': debugToken,
-                },
-            });
-
-            let data = await response.json();
-
-            const logIdsNew = data.filter(x => !previousLogIds.includes(x));
-
-            if (logIdsNew.length) {
-                // Append new log IDs
-                previousLogIds.push(...logIdsNew);
-
-                let response = await fetch(debugRoutePath + '/entries', {
+        clearBtn.addEventListener("click", async () => {
+            try {
+                let response = await fetch(squizRoutePath + '/clear', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-DEBUG-TOKEN': debugToken,
-                        'X-CSRF-TOKEN': csrfToken
+                        'X-SQUIZ-TOKEN': squizToken
                     },
-                    body: JSON.stringify({
-                        logIds: logIdsNew
-                    })
+                });
+
+                entriesContainer.innerHTML = '<pre>No entries.</pre>';
+            } catch (error) {
+                console.error("Request failed:", error);
+            }
+        });
+
+        setInterval(async () => {
+            if (currentState === 'paused') {
+                return;
+            }
+
+            try {
+                let response = await fetch(squizRoutePath + '/ids', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-SQUIZ-TOKEN': squizToken,
+                    },
                 });
 
                 let data = await response.json();
 
-                await addEntries(data);
-            }
-        } catch (error) {
-            console.error("Request failed:", error);
-        }
-    }, debugPollingInterval);
+                const logIdsNew = data.filter(x => !previousLogIds.includes(x));
 
-    // Style themed buttons and apply theme
-    styleThemeButtons(currentTheme);
-    styleAutoButton(currentState);
-    applyTheme(currentTheme);
-});
+                if (logIdsNew.length) {
+                    // Append new log IDs
+                    previousLogIds.push(...logIdsNew);
+
+                    let response = await fetch(squizRoutePath + '/entries', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-SQUIZ-TOKEN': squizToken
+                        },
+                        body: JSON.stringify({
+                            logIds: logIdsNew
+                        })
+                    });
+
+                    let data = await response.json();
+
+                    await addEntries(data);
+                }
+            } catch (error) {
+                console.error("Request failed:", error);
+            }
+        }, squizPollingInterval);
+
+        // Style themed buttons and apply theme
+        styleThemeButtons(currentTheme);
+        styleAutoButton(currentState);
+        applyTheme(currentTheme);
+    });
 </script>
 
 <style>
@@ -249,6 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .icons .icon:hover { cursor: pointer; }
     .notify { display: flex; align-items: center; color: transparent; font-size: 30px; }
     .notify svg { height: 100%; width: auto; }
+    .warning { color: #ffffff; padding: 10px 10px 1px 10px; margin: 10px 0 20px 0; border-radius: 5px; font-size: 16px; }
+    .warning .header { margin-bottom: 10px; font-weight: bold; }
     .flip { transform: scaleX(-1); }
     .italic { font-style: italic; }
 
@@ -279,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .heading .centre .on { color: red; }
         .heading .icons { background-color: #e4e4e7; }
         .heading .icons .selected { background-color: #fafafa; border: 1px solid #a1a1aa; }
+        .warning { background-color: #dc2626; }
 
         /* VarDumper */
         /*pre.sf-dump { color: #cc7832; background-color: #fafafa; !*zinc-100*! }*/
@@ -307,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .heading .centre .on { color: red; }
         .heading .icons { background-color: #27272a; }
         .heading .icons .selected { color: black; background-color: #fafafa; border: 1px solid #a1a1aa; }
+        .warning { background-color: red; }
 
         /* VarDumper */
         /*pre.sf-dump { background-color: #18181b; !* zinc-800 *! }*/
@@ -391,6 +392,16 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </div>
 
+@foreach (['polling_interval', 'title', 'heading'] as $config)
+    @if(!config("squiz.$config"))
+        <div class="warning">
+            <div class="header">WARNING</div>
+            <div>This value is set to null in your .env file:</div>
+            <div><pre>{{ $config }}</pre></div>
+        </div>
+    @endif
+@endforeach
+
 <div id="entries-container">
     @if(count($logEntries) === 0)
         <pre>No entries.</pre>
@@ -420,10 +431,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <form>
     <input type="hidden" id="logIds" name="logIds" value="{{ implode(',', $logIds) }}">
-    <input type="hidden" id="debugToken" name="debugToken" value="{{ config('squiz.token') }}">
-    <input type="hidden" id="debugPollingInterval" name="debugPollingInterval" value="{{ config('squiz.polling_interval') }}">
-    <input type="hidden" id="debugRoutePath" name="debugRoutePath" value="{{ config('squiz.route_path') }}">
-    @csrf
+    <input type="hidden" id="squizToken" name="squizToken" value="{{ config('squiz.token') }}">
+    <input type="hidden" id="squizPollingInterval" name="squizPollingInterval" value="{{ config('squiz.polling_interval') }}">
+    <input type="hidden" id="squizRoutePath" name="squizRoutePath" value="{{ config('squiz.route_path') }}">
 </form>
 
 </body>
