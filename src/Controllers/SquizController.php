@@ -17,11 +17,7 @@ class SquizController extends Controller
         // Get token from URL query parameter, otherwise from header
         // URL query parameter token is used for the view when visiting the page
         // Header token is used by JS requests
-        $this->appToken = request()->get('token') ?? request()->header('X-DEBUG-TOKEN');
-
-        // Debug - log tokens
-        //$csrfToken = request()->header('X-CSRF-TOKEN');
-        //Log::info("Token: $this->appToken | CSRF: $csrfToken");
+        $this->appToken = request()->get('token') ?? request()->header('X-SQUIZ-TOKEN');
 
         if (config('app.env') == 'local') {
             return;
