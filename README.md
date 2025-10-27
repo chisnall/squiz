@@ -36,7 +36,7 @@ squiz()
 
 Providing a string or variable.
 
-Any variable is supported: scalar, arrays, objects and resources. Even methods in objects.
+Any variable is supported: scalars, arrays, objects and resources. Even methods in objects.
 
 This will render the output in the same style as the `dump()` function in VarDumper.
 
