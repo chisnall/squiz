@@ -7,8 +7,8 @@ Squiz is a debugger for Laravel.
 
 It allows you to make use of the Symfony VarDumper component output on a single screen dedicated for debugging and for observing your application.
 
-It has been tested on Laravel versions 11 and 12.  
-It has not been tested on previous versions of Laravel.
+It works with Laravel versions 9 to 12.  
+It has not been tested on previous versions.
 
 ![screenshot](https://github.com/chisnall/squiz/blob/main/screenshot.png "Screenshot")
 
