@@ -135,4 +135,17 @@ class SquizController extends Controller
             'message' => 'Log cleared'
         ]);
     }
+
+    public function deleteEntry(Request $request): JsonResponse
+    {
+        $entryId = $request['entryId'];
+
+        $file = storage_path('squiz') . "/$entryId.log";
+
+        File::delete($file);
+
+        return response()->json([
+            'message' => 'Entry deleted: ' . $entryId
+        ]);
+    }
 }
