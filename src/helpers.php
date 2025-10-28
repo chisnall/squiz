@@ -43,7 +43,7 @@ if (! function_exists('squiz')) {
         }
 
         // Determine output file
-        $id = hrtime(true);
+        $id = (int)(microtime(true) * 1_000_000);
         $outputFile = "$storagePath/squiz/$id.log";
 
         // Get backtrace
