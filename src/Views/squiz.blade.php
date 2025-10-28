@@ -5,16 +5,16 @@
     <title>{{ config('squiz.title') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    {{-- JetBrains Mono font instead of Roboto Monno --}}
-    {{-- <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"> --}}
+     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    {{-- Roboto Mono font instead of JetBrains Monno --}}
+    {{-- <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"> --}}
     <link rel="icon" type="image/png" sizes="32x32" href="https://laravel.com/img/favicon/favicon-32x32.png">
 </head>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Add new entries to the DOM
-        async function addEntries(data) {
+        function addEntries(data) {
             const noEntries = entriesContainer.textContent.includes('No entries');
 
             let html = '';
@@ -22,25 +22,34 @@
             // Check for no entries
             if (noEntries) {
                 entriesContainer.innerHTML = '';
-            } else {
-                html += `<hr>`;
             }
 
             if (data.length) {
                 data.forEach((entry, index) => {
                     const isLast = index === data.length - 1;
 
+                    html += `<div id="entry-${entry.id}" class="entry">`;
+
                     if (entry.terminated) {
-                        html += `<div class="terminated"><pre class="datetime terminated">${entry.datetime}</pre><pre class="terminated">terminated</pre></div>`;
+                        html += '<div class="terminated">';
                     } else {
-                        html += `<pre class="datetime">${entry.datetime}</pre>`;
+                        html += '<div class="line">';
                     }
 
-                    html += `<pre>${entry.file}</pre>`;
-                    html += `<pre>${entry.line}</pre>`;
-                    if (entry.comment) html += `<pre class="italic">${entry.comment}</pre>`;
-                    html += atob(entry.entry);
-                    if (!isLast) html += `<hr>`;
+                    html += `<div class="datetime"><pre class="datetime">${entry.datetime}</pre><div class="delete" data-id="${entry.id}">${deleteIcon}</div>`;
+
+                    if (entry.terminated) {
+                        html += '</div><pre>terminated</pre></div>';
+                    } else {
+                        html += '</div></div>';
+                    }
+
+                    html += `<div class="line"><pre>${entry.file}:${entry.line}</pre></div>`;
+                    //html += `<div class="line"><pre>${entry.line}</pre></div>`;
+                    if (entry.comment) html += `<div class="line"><pre class="italic">${entry.comment}</pre></div>`;
+                    html += '<div class="vardump">' + atob(entry.entry) + '</div>';
+                    html += `<hr>`;
+                    html += `</div>`;
                 });
             }
 
@@ -101,7 +110,9 @@
         function styleAutoButton(state) {
             if (state === 'running') {
                 autoBtn.classList.add("running");
+                autoBtn.classList.remove("paused");
             } else {
+                autoBtn.classList.add("paused");
                 autoBtn.classList.remove("running");
             }
         }
@@ -134,6 +145,8 @@
         let previousLogIdsValue = document.getElementById('logIds').value === '' ? null : document.getElementById('logIds').value;
         let previousLogIds = previousLogIdsValue === null ? [] : previousLogIdsValue.split(",").map(Number);
 
+        const deleteIcon = '<svg fill="none" viewBox="4 2 16 20"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"></path></svg>';
+
         systemThemeButton.addEventListener("click", () => {
             localStorage.setItem("currentTheme", "system");
             styleThemeButtons('system');
@@ -158,9 +171,9 @@
             styleAutoButton(currentState);
         });
 
-        clearBtn.addEventListener("click", async () => {
+        clearBtn.addEventListener("click", () => {
             try {
-                let response = await fetch(squizRoutePath + '/clear', {
+                fetch(squizRoutePath + '/clear', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -171,6 +184,37 @@
                 entriesContainer.innerHTML = '<pre>No entries.</pre>';
             } catch (error) {
                 console.error("Request failed:", error);
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const el = e.target.closest('div.delete');
+            if (el) {
+                const entryId = el.dataset.id;
+
+                const entryDiv = document.getElementById('entry-' + entryId);
+                if (entryDiv) entryDiv.remove();
+
+                let entriesCount = document.querySelectorAll('div.entry').length;
+
+                if (entriesCount === 0) {
+                    entriesContainer.innerHTML = '<pre>No entries.</pre>';
+                }
+
+                try {
+                    fetch(squizRoutePath + '/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-SQUIZ-TOKEN': squizToken
+                        },
+                        body: JSON.stringify({
+                            entryId: entryId
+                        })
+                    });
+                } catch (error) {
+                    console.error("Request failed:", error);
+                }
             }
         });
 
@@ -224,10 +268,9 @@
 </script>
 
 <style>
-    body { margin: 15px; padding-top: 65px; font-family: "Roboto", sans-serif; }
-    pre { font-family: "Roboto Mono", monospace; font-size: 14px; font-weight: normal; }
+    body { margin: 15px; padding-top: 75px; font-family: "Roboto", sans-serif; }
+    pre { display: inline-block; margin: 0; font-family: "JetBrains Mono", monospace; font-size: 14px; font-weight: normal; }
     pre.datetime { font-weight: bold; }
-    pre.terminated { margin: 0; }
     hr { border: none; height: 0; margin-top: 20px; margin-bottom: 14px; }
     h1 { font-weight: bold; font-size: 22px; }
     /*button { padding: 6px 20px; background-color: #6B7280; color: white; font-family: "Roboto", sans-serif; font-weight: bold; border-radius: 6px; cursor: pointer; }*/
@@ -235,19 +278,25 @@
     button.clear { padding: 6px 20px; font-family: "Roboto", sans-serif; font-weight: bold; }
     button.auto { display: flex; align-items: center; justify-content: center; padding: 0 10px; }
     button:focus { outline: none; }
-    .heading { position: fixed; top: 0; left: 0; right: 0; padding: 10px 15px; z-index: 100000; display: flex; justify-content: space-between; align-items: center; cursor: default; }
-    .heading .text { display: flex; align-items: center; gap: 10px; }
-    .heading .text h1 { flex-shrink: 0; white-space: nowrap; }
-    .heading .text svg { flex-shrink: 0; height: 25px; width: 25px; }
-    .heading .centre { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .heading .buttons { display: flex; gap: 10px; }
-    .icons { display: flex; height: 30px; padding: 4px; gap: 5px; border-radius: 19px; }
-    .icons .icon { display: flex; padding: 0; border: 1px solid transparent; border-radius: 15px; }
-    .icons .icon:hover { cursor: pointer; }
-    .notify { display: flex; align-items: center; color: transparent; font-size: 30px; }
-    .notify svg { height: 100%; width: auto; }
-    .warning { color: #ffffff; padding: 10px 10px 1px 10px; margin: 10px 0 20px 0; border-radius: 5px; font-size: 16px; }
-    .warning .header { margin-bottom: 10px; font-weight: bold; }
+    div.datetime { display: flex; align-items: center; }
+    div.line { padding: 8px 0; }
+    div.terminated { display: flex; justify-content: space-between; padding: 8px; }
+    div.vardump { padding: 5px 0; }
+    div.heading { position: fixed; top: 0; left: 0; right: 0; padding: 10px 15px; z-index: 100000; display: flex; justify-content: space-between; align-items: center; cursor: default; }
+    div.heading div.text { display: flex; align-items: center; gap: 10px; }
+    div.heading div.text h1 { flex-shrink: 0; white-space: nowrap; }
+    div.heading div.text svg { flex-shrink: 0; height: 25px; width: 25px; }
+    div.heading div.centre { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    div.heading div.buttons { display: flex; gap: 10px; }
+    div.icons { display: flex; height: 30px; padding: 4px; gap: 5px; border-radius: 19px; }
+    div.icons div.icon { display: flex; padding: 0; border: 1px solid transparent; border-radius: 15px; }
+    div.icons div.icon:hover { cursor: pointer; }
+    div.notify { display: flex; align-items: center; color: transparent; font-size: 30px; }
+    div.notify svg { height: 100%; width: auto; }
+    div.delete { margin-top: -1px; }
+    div.delete svg { display: block; margin-left: 10px; height: 15px; width: 15px; cursor: pointer; }
+    div.warning { color: #ffffff; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-size: 16px; }
+    div.warning div.header { margin-bottom: 10px; font-weight: bold; }
     .flip { transform: scaleX(-1); }
     .italic { font-style: italic; }
 
@@ -267,18 +316,19 @@
     /* Light theme */
     html[data-theme="light"] {
         body { background-color: #fafafa; color: black; }
-        div.terminated { display: flex; justify-content: space-between; padding: 5px; color: white; background-color: #dc2626; }
         hr { border-top: 1px solid #a1a1aa; }
         button { background-color: #d4d4d8; border: 1px solid #a1a1aa; }
         button:hover { background-color: #a1a1aa; }
-        button.auto:hover { background-color: #84cc16; }
+        button.paused:hover { background-color: #d4d4d8; }
         button.running { background-color: #a3e635; }
-        .heading { background-color: #fafafa; border-bottom: 1px solid #a1a1aa; }
-        .heading .text { color: #1d4ed8; }
-        .heading .centre .on { color: red; }
-        .heading .icons { background-color: #e4e4e7; }
-        .heading .icons .selected { background-color: #fafafa; border: 1px solid #a1a1aa; }
-        .warning { background-color: #dc2626; }
+        /*button.running:hover { background-color: #84cc16; }*/
+        div.terminated { color: white; background-color: #dc2626; }
+        div.heading { background-color: #fafafa; border-bottom: 1px solid #a1a1aa; }
+        div.heading div.text { color: #1d4ed8; }
+        div.heading div.centre div.on { color: red; }
+        div.heading div.icons { background-color: #e4e4e7; }
+        div.heading div.icons div.selected { background-color: #fafafa; border: 1px solid #a1a1aa; }
+        div.warning { background-color: #dc2626; }
 
         /* VarDumper */
         /*pre.sf-dump { color: #cc7832; background-color: #fafafa; !*zinc-100*! }*/
@@ -296,18 +346,19 @@
     /* Dark theme */
     html[data-theme="dark"] {
         body { background-color: black; color: #d4d4d8; }
-        div.terminated { display: flex; justify-content: space-between; padding: 5px; color: white; background-color: red; }
         hr { border-top: 1px solid #71717a; }
         button { color: #d4d4d8; background-color: #27272a; border: 1px solid #a1a1aa; }
         button:hover { background-color: #3f3f46; }
-        button.auto:hover { background-color: #65a30d; }
+        button.paused:hover { background-color: #27272a; }
         button.running { background-color: #4d7c0f; }
-        .heading { background-color: black; border-bottom: 1px solid #71717a; }
-        .heading .text { color: #0284c7; }
-        .heading .centre .on { color: red; }
-        .heading .icons { background-color: #27272a; }
-        .heading .icons .selected { color: black; background-color: #fafafa; border: 1px solid #a1a1aa; }
-        .warning { background-color: red; }
+        /*button.running:hover { background-color: #65a30d; }*/
+        div.terminated { color: white; background-color: red; }
+        div.heading { background-color: black; border-bottom: 1px solid #71717a; }
+        div.heading div.text { color: #0284c7; }
+        div.heading div.centre div.on { color: red; }
+        div.heading div.icons { background-color: #27272a; }
+        div.heading div.icons div.selected { color: black; background-color: #fafafa; border: 1px solid #a1a1aa; }
+        div.warning { background-color: red; }
 
         /* VarDumper */
         /*pre.sf-dump { background-color: #18181b; !* zinc-800 *! }*/
@@ -408,24 +459,57 @@
     @endif
 
     @foreach($logEntries as $logEntry)
-        @if($logEntry['terminated'])
-            <div class="terminated"><pre class="datetime terminated">{{ $logEntry['datetime'] }}</pre><pre class="terminated">terminated</pre></div>
-        @else
-            <pre class="datetime">{{ $logEntry['datetime'] }}</pre>
-        @endif
+        <div id="entry-{{ $logEntry['id'] }}" class="entry">
+            @if($logEntry['terminated'])
+                <div class="terminated">
+                    <div class="datetime">
+                        <pre class="datetime">{{ $logEntry['datetime'] }}</pre>
 
-        <pre>{{ $logEntry['file'] }}</pre>
-        <pre>{{ $logEntry['line'] }}</pre>
+                        <div class="delete" data-id="{{ $logEntry['id'] }}">
+                            <svg fill="none" viewBox="4 2 16 20">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"></path>
+                            </svg>
+                        </div>
+                    </div>
 
-        @if($logEntry['comment'])
-            <pre class="italic">{{ $logEntry['comment'] }}</pre>
-        @endif
+                    <pre>terminated</pre>
+                </div>
+            @else
+                <div class="line">
+                    <div class="datetime">
+                        <pre class="datetime">{{ $logEntry['datetime'] }}</pre>
 
-        {!! base64_decode($logEntry['entry']) !!}
+                        <div class="delete" data-id="{{ $logEntry['id'] }}">
+                            <svg fill="none" viewBox="4 2 16 20">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
-        @if(!$loop->last)
+            <div class="line">
+                <pre>{{ $logEntry['file'] . ':' . $logEntry['line'] }}</pre>
+            </div>
+
+            {{--<div class="line">--}}
+            {{--    <pre>{{ $logEntry['line'] }}</pre>--}}
+            {{--</div>--}}
+
+            @if($logEntry['comment'])
+                <div class="line">
+                    <pre class="italic">{{ $logEntry['comment'] }}</pre>
+                </div>
+            @endif
+
+            <div class="vardump">
+                {!! base64_decode($logEntry['entry']) !!}
+            </div>
+
+            {{-- @if(!$loop->last) --}}
             <hr>
-        @endif
+            {{-- @endif --}}
+        </div>
     @endforeach
 </div>
 
