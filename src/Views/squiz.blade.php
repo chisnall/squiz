@@ -187,12 +187,20 @@
             }
         });
 
+        // Stops Chrome's triple-click selection on the delete icons
+        document.addEventListener('pointerdown', function (e) {
+            if (e.target.closest('div.delete')) {
+                e.preventDefault();
+            }
+        });
+
         document.addEventListener('click', function(e) {
             const el = e.target.closest('div.delete');
             if (el) {
                 const entryId = el.dataset.id;
 
                 const entryDiv = document.getElementById('entry-' + entryId);
+
                 if (entryDiv) entryDiv.remove();
 
                 let entriesCount = document.querySelectorAll('div.entry').length;
@@ -268,7 +276,7 @@
 </script>
 
 <style>
-    body { margin: 15px; padding-top: 75px; font-family: "Roboto", sans-serif; }
+    body { overflow-y: scroll; margin: 15px; padding-top: 75px; font-family: "Roboto", sans-serif; }
     pre { display: inline-block; margin: 0; font-family: "JetBrains Mono", monospace; font-size: 14px; font-weight: normal; }
     pre.datetime { font-weight: bold; }
     hr { border: none; height: 0; margin-top: 20px; margin-bottom: 14px; }
