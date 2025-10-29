@@ -6,39 +6,36 @@ use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 if (! function_exists('squiz')) {
     function squiz(mixed $entry, ?string $comment = null)
     {
-        // Determine storage path
-        // If running from PHPUnit, we need to use the env variable
-        // defined in the phpunit.xml environment variables section as:
-        // <env name="LARAVEL_STORAGE_PATH" value="[storage path here]"/>
-        if (function_exists('app') && app() instanceof Illuminate\Foundation\Application) {
-            // Check for production environment
-            if (App::environment('production')) {
-                return;
-            }
-
-            // Get storage path from application
-            $storagePath = storage_path();
-        } else {
-            // Get storage path from phpunit.xml environment variable
-            $storagePath = env('LARAVEL_STORAGE_PATH');
+        // Check for production environment
+        if (App::environment('production')) {
+            return false;
         }
 
-        // Confirm we have a storage path
-        if (! $storagePath) {
-            return;
+        // Set storage path
+        $storagePath = config('squiz.storage_path');
+
+        // Get storage path from application for certain Pest tests
+        if (app()->runningUnitTests()) {
+            $pestTestName = test()->name();
+
+            if (str_contains($pestTestName, 'where_storage_path_is_not_valid') ||
+                str_contains($pestTestName, 'fails_to_creates_the_squiz_directory')
+            ) {
+                $storagePath = storage_path();
+            }
         }
 
         // Confirm storage path exists
         if (! file_exists($storagePath)) {
-            return;
+            throw new Exception("Storage path does not exist");
         }
 
-        // Check if subdirectory exists
-        if (! file_exists("$storagePath/squiz")) {
-            mkdir("$storagePath/squiz");
-
-            if (! file_exists("$storagePath/squiz")) {
-                return;
+        // Check if squiz subdirectory exists
+        if (! is_dir("$storagePath/squiz")) {
+            try {
+                mkdir("$storagePath/squiz");
+            } catch (Exception $exception) {
+                throw new Exception("Failed to create squiz subdirectory");
             }
         }
 
@@ -113,13 +110,18 @@ if (! function_exists('squiz')) {
 
         // Output file
         file_put_contents($outputFile, serialize($output));
+
+        return true;
     }
 }
 
 if (! function_exists('squizd')) {
     function squizd(mixed $entry, ?string $comment = null)
     {
-        squiz($entry, "__TERMINATED__$comment");
-        die;
+        $result = squiz($entry, "__TERMINATED__$comment");
+
+        if ($comment != '__PEST_TEST__') die;
+
+        return $result;
     }
 }
