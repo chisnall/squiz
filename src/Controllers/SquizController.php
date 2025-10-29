@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 class SquizController extends Controller
 {
     private ?string $appToken;
+    private ?string $logPath;
 
     public function __construct()
     {
@@ -18,6 +19,8 @@ class SquizController extends Controller
         // URL query parameter token is used for the view when visiting the page
         // Header token is used by JS requests
         $this->appToken = request()->get('token') ?? request()->header('X-SQUIZ-TOKEN');
+
+        $this->logPath = config('squiz.storage_path') . '/squiz';
 
         if (config('app.env') == 'local') {
             return;
@@ -35,8 +38,8 @@ class SquizController extends Controller
         }
 
         // Check if subdirectory exists
-        if (! file_exists(storage_path('squiz'))) {
-            mkdir(storage_path('squiz'));
+        if (! file_exists($this->logPath)) {
+            mkdir($this->logPath);
         }
 
         $logIds = $this->logIds();
@@ -48,11 +51,7 @@ class SquizController extends Controller
 
     private function files(): array
     {
-        $logDirectory = storage_path('squiz');
-
-        $files = File::files($logDirectory);
-
-        return $files;
+        return File::files($this->logPath);
     }
 
     private function logIds()
@@ -62,11 +61,15 @@ class SquizController extends Controller
         $files = $this->files();
 
         foreach ($files as $file) {
-            $contents = File::get($file);
+            try {
+                $contents = File::get($file);
 
-            $entry = unserialize($contents);
+                $entry = unserialize($contents);
 
-            $logIds[] = $entry['id'];
+                $logIds[] = $entry['id'];
+            } catch (\Throwable $exception) {
+                //
+            }
         }
 
         return $logIds;
@@ -103,9 +106,7 @@ class SquizController extends Controller
 
     public function getLogIds(): JsonResponse
     {
-        $entries = $this->logIds();
-
-        return response()->json($entries);
+        return response()->json($this->logIds());
     }
 
     public function getLogEntries(Request $request): JsonResponse
@@ -140,12 +141,10 @@ class SquizController extends Controller
     {
         $entryId = $request['entryId'];
 
-        $file = storage_path('squiz') . "/$entryId.log";
-
-        File::delete($file);
+        File::delete("$this->logPath/$entryId.log");
 
         return response()->json([
-            'message' => 'Entry deleted: ' . $entryId
+            'message' => "Entry deleted: $entryId"
         ]);
     }
 }
