@@ -1,6 +1,6 @@
 <?php
 
-use Chisnall\Squiz\Controllers\SquizController;
+use Chisnall\Squiz\Http\Controllers\SquizController;
 use Illuminate\Support\Facades\Route;
 
 Route::post(config('squiz.route_path') . '/clear', [SquizController::class, 'clearLog'])->name('squizClear');
