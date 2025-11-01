@@ -4,6 +4,41 @@ use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 
 if (! function_exists('squiz')) {
+    if (! function_exists('deleteDirectory')) {
+        function deleteDirectory(string $path)
+        {
+            if (! file_exists($path)) {
+                throw new Exception("Directory does not exist");
+            }
+
+            if (! is_dir($path)) {
+                throw new Exception("Path is not a directory");
+            }
+
+            $items = array_diff(scandir($path), ['.', '..']);
+
+            try {
+                foreach ($items as $item) {
+                    $fullPath = "$path/$item";
+
+                    if (is_dir($fullPath)) {
+                        deleteDirectory($fullPath);
+                    } else {
+                        // ErrorException on error
+                        unlink($fullPath);
+                    }
+                }
+
+                // ErrorException on error
+                rmdir($path);
+            } catch (Throwable $exception) {
+                throw new Exception("Permission denied");
+            }
+
+            return true;
+        }
+    }
+
     function squiz(mixed $entry, ?string $comment = null)
     {
         // Check for production environment
@@ -14,8 +49,9 @@ if (! function_exists('squiz')) {
         // Set storage path
         $storagePath = config('squiz.storage_path');
 
-        // Get storage path from application for certain Pest tests
-        if (app()->runningUnitTests()) {
+        // Check if running from Pest
+        if (runningInPest()) {
+            // Get storage path from application for certain Pest tests
             $pestTestName = test()->name();
 
             if (str_contains($pestTestName, 'where_storage_path_is_not_valid') ||
@@ -124,4 +160,19 @@ if (! function_exists('squizd')) {
 
         return $result;
     }
+}
+
+function runningInPest(?array $backtrace = null): bool
+{
+    $backtrace ??= debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+
+    foreach ($backtrace as $frame) {
+        if (isset($frame['class'])) {
+            $class = $frame['class'];
+
+            return $class === \Tests\TestCase::class || is_subclass_of($class, \Tests\TestCase::class);
+        }
+    }
+
+    return false;
 }
