@@ -38,9 +38,11 @@ class SquizController extends Controller
 
     public function index()
     {
-        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
-            \Barryvdh\Debugbar\Facades\Debugbar::disable();
-        }
+        // TODO: delete once handled in routes
+//        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+//            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+//            \Barryvdh\Debugbar\Facades\Debugbar::collect(false);
+//        }
 
         if (! file_exists($this->logPath)) {
             mkdir($this->logPath);
