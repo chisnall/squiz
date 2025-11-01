@@ -1,6 +1,6 @@
 <?php
 
-use Chisnall\Squiz\Controllers\SquizController;
+use Chisnall\Squiz\Http\Controllers\SquizController;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 beforeEach(function () {
