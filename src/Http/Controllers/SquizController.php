@@ -16,8 +16,9 @@ class SquizController extends Controller
 
     public function __construct()
     {
-        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
-            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        // Disable debugbar
+        if (app()->bound('debugbar')) {
+            app('debugbar')->disable();
         }
 
         // Get token from URL query parameter, otherwise from header
