@@ -5,13 +5,15 @@ namespace Chisnall\Squiz\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
 class SquizController extends Controller
 {
-    private ?string $appToken;
-    private ?string $logPath;
+    public ?string $appToken;
+    public ?string $logPath;
+    public ?bool $tokenValid;
 
     public function __construct()
     {
@@ -19,16 +21,19 @@ class SquizController extends Controller
         // URL query parameter token is used for the view when visiting the page
         // Header token is used by JS requests
         $this->appToken = request()->get('token') ?? request()->header('X-SQUIZ-TOKEN');
-
         $this->logPath = config('squiz.storage_path') . '/squiz';
 
-        if (config('app.env') == 'local') {
+        if (App::environment() == 'local') {
+            $this->tokenValid = null;
             return;
         }
 
         if ($this->appToken != config('squiz.token')) {
+            $this->tokenValid = false;
             abort(404);
         }
+
+        $this->tokenValid = true;
     }
 
     public function index()
@@ -37,7 +42,6 @@ class SquizController extends Controller
             \Barryvdh\Debugbar\Facades\Debugbar::disable();
         }
 
-        // Check if subdirectory exists
         if (! file_exists($this->logPath)) {
             mkdir($this->logPath);
         }
@@ -49,16 +53,16 @@ class SquizController extends Controller
         return view()->file(base_path('vendor/chisnall/squiz/src/Views/squiz.blade.php'), ['logIds' => $logIds, 'logEntries' => $logEntries]);
     }
 
-    private function files(): array
+    public function files(): array
     {
         return File::files($this->logPath);
     }
 
-    private function logIds()
+    public function logIds(?array $files = null)
     {
         $logIds = [];
 
-        $files = $this->files();
+        $files ??= $this->files();
 
         foreach ($files as $file) {
             try {
@@ -75,11 +79,11 @@ class SquizController extends Controller
         return $logIds;
     }
 
-    private function logEntries(): array
+    public function logEntries(?array $files = null): array
     {
         $entries = [];
 
-        $files = $this->files();
+        $files ??= $this->files();
 
         foreach ($files as $file) {
             try {
