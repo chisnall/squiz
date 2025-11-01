@@ -1,13 +1,12 @@
 <?php
 
-namespace Chisnall\Squiz\Controllers;
+namespace Chisnall\Squiz\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 
 class SquizController extends Controller
 {
@@ -17,6 +16,10 @@ class SquizController extends Controller
 
     public function __construct()
     {
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         // Get token from URL query parameter, otherwise from header
         // URL query parameter token is used for the view when visiting the page
         // Header token is used by JS requests
@@ -38,12 +41,6 @@ class SquizController extends Controller
 
     public function index()
     {
-        // TODO: delete once handled in routes
-//        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
-//            \Barryvdh\Debugbar\Facades\Debugbar::disable();
-//            \Barryvdh\Debugbar\Facades\Debugbar::collect(false);
-//        }
-
         if (! file_exists($this->logPath)) {
             mkdir($this->logPath);
         }
