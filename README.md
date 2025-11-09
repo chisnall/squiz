@@ -1,4 +1,4 @@
-# Squiz
+# Squiz Debugger for Laravel
 
 *squiz* : colloquial (originally Australian and New Zealand).  
 A look; a glance. Frequently (and in earliest use) in to have (also take) a squiz (at): to have a look (at someone or something).
