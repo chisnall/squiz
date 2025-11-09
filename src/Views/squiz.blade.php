@@ -60,7 +60,20 @@
             runScriptsFrom(entriesContainer);
         }
 
-        // Function to apply theme
+        // Remove entries from the DOM
+        function removeEntries(data) {
+            if (data.length) {
+                data.forEach((id) => {
+                    const element = document.getElementById(`entry-${id}`);
+
+                    if (element) {
+                        element.remove();
+                    }
+                });
+            }
+        }
+
+        // Apply theme
         function applyTheme(theme) {
             // Check for system theme
             if (theme === "system") {
@@ -106,7 +119,7 @@
             });
         }
 
-        // Function to style auto button
+        // Style auto button
         function styleAutoButton(state) {
             if (state === 'running') {
                 autoBtn.classList.add("running");
@@ -117,7 +130,7 @@
             }
         }
 
-        // Function to style theme buttons
+        // Style theme buttons
         function styleThemeButtons(button) {
             systemThemeButton.classList.remove("selected");
             lightThemeButton.classList.remove("selected");
@@ -199,7 +212,10 @@
             if (el) {
                 const entryId = el.dataset.id;
 
-                const entryDiv = document.getElementById('entry-' + entryId);
+                // Remove deleted log ID
+                previousLogIds = previousLogIds.filter(x => x !== Number(entryId));
+
+                const entryDiv = document.getElementById(`entry-${entryId}`)
 
                 if (entryDiv) entryDiv.remove();
 
@@ -242,7 +258,17 @@
 
                 let data = await response.json();
 
+                const logIdsDeleted = previousLogIds.filter(x => !data.includes(x));
+
                 const logIdsNew = data.filter(x => !previousLogIds.includes(x));
+
+                if (logIdsDeleted.length) {
+                    // Remove deleted log IDs
+                    previousLogIds = previousLogIds.filter(x => !logIdsDeleted.includes(x));
+
+                    // Remove entries
+                    removeEntries(logIdsDeleted);
+                }
 
                 if (logIdsNew.length) {
                     // Append new log IDs
