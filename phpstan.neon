@@ -1,0 +1,20 @@
+includes:
+  - /root/.composer/vendor/larastan/larastan/extension.neon
+  - /root/.composer/vendor/nesbot/carbon/extension.neon
+
+parameters:
+  bootstrapFiles:
+    - phpstan-bootstrap.php
+
+  level: 6
+
+  scanDirectories:
+    - stubs/
+
+  paths:
+    - config/
+    - routes/
+    - src/
+
+  ignoreErrors:
+    - '#Function test not found.#'
