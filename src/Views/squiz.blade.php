@@ -350,7 +350,7 @@
 
     /* Light theme */
     html[data-theme="light"] {
-        body { background-color: #fafafa; color: black; }
+        body { background-color: #faf9f5; color: black; }
         hr { border-top: 1px solid #a1a1aa; }
         button { background-color: #d4d4d8; border: 1px solid #a1a1aa; }
         button:hover { background-color: #a1a1aa; }
