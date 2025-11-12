@@ -337,7 +337,10 @@ test('squizd() backtrace alias', function () {
 
 test('runningInPest() - true', function () {
     $fakeBacktrace = [
-        ['class' => \Tests\TestCase::class],
+        [
+            'class' => \Tests\TestCase::class, 'function' => 'runTest',
+            'file' => '/projects/work/laravel/framework/vendor/pestphp/pest/bin/pest',
+        ],
     ];
 
     expect(runningInPest($fakeBacktrace))->toBeTrue();
@@ -345,7 +348,9 @@ test('runningInPest() - true', function () {
 
 test('runningInPest() - false 1', function () {
     $fakeBacktrace = [
-        ['class' => \App\Http\Controllers\Controller::class],
+        [
+            'class' => \App\Http\Controllers\Controller::class, 'function' => 'runTest',
+        ],
     ];
 
     expect(runningInPest($fakeBacktrace))->toBeFalse();
@@ -353,7 +358,9 @@ test('runningInPest() - false 1', function () {
 
 test('runningInPest() - false 2', function () {
     $fakeBacktrace = [
-        ['file' => 'test_file'],
+        [
+            'file' => 'test_file',
+        ],
     ];
 
     expect(runningInPest($fakeBacktrace))->toBeFalse();

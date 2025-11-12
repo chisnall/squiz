@@ -4,11 +4,6 @@ test('Config is loaded', function () {
     $config = config('squiz');
 
     expect($config)->toBeArray()
-        ->toHaveKey('token')
-        ->toHaveKey('polling_interval')
-        ->toHaveKey('storage_path')
-        ->toHaveKey('route_path')
-        ->toHaveKey('title')
-        ->toHaveKey('heading')
-        ->toHaveCount(6);
+        ->and($config)->toHaveKeys(['token', 'polling_interval', 'storage_path', 'route_path', 'title', 'heading'])
+        ->and($config)->toHaveCount(6);
 });
