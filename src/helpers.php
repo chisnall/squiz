@@ -110,7 +110,7 @@ if (! function_exists('squiz')) {
             }
 
             // Look for called from squizd()
-            if ($entry == '__TERMINATED__') {
+            if (is_string($entry) && $entry === '__TERMINATED__') {
                 $terminated = true;
                 unset($entries[$index]);
             }
@@ -244,12 +244,23 @@ if (! function_exists('runningInPest')) {
         // Get backtrace
         $backtrace ??= debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-        // Check for class or subclass of \Tests\TestCase in the backtrace
-        foreach ($backtrace as $frame) {
-            if (isset($frame['class'])) {
-                $class = $frame['class'];
+        // Sort backtrace in reverse order
+        $backtrace = array_reverse($backtrace);
 
-                return $class === \Tests\TestCase::class || is_subclass_of($class, \Tests\TestCase::class);
+        // Process backtrace
+        foreach ($backtrace as $frame) {
+            // Check for class or subclass of \Tests\TestCase in the backtrace
+            // if (isset($frame['class'])) {
+            //    $class = $frame['class'];
+            //
+            //    return $class === \Tests\TestCase::class || is_subclass_of($class, \Tests\TestCase::class);
+            // }
+
+            // Check for /bin/pest file
+            if (isset($frame['file'])) {
+                $file = $frame['file'];
+
+                return preg_match('#/pestphp/pest/bin/pest$#', $file);
             }
         }
 
